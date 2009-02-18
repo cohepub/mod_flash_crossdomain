@@ -20,7 +20,7 @@ stop(_Host) ->
 	get(socket_holder_pid) ! close_all,
     ok.
 
-%%%%%%
+%
 	
 socket_holder(Sockets) ->
 	receive
@@ -36,7 +36,7 @@ socket_holder() ->
 	
 			
 listen_843(Host, Holder) ->
-	case gen_tcp:listen(843, [list, {packet, 0},  {active, false}]) of
+	case gen_tcp:listen(843, [binary, {packet, 0},  {active, false}]) of
 		{ok, LSock} ->
 			Holder ! { add, LSock },
 	    	loop_843(Host, LSock);
@@ -56,16 +56,18 @@ loop_843(Host, Listen) ->
 
 adobe_flash_connection_handler(Host, Socket) ->
 	case gen_tcp:recv(Socket, 0) of
-        {ok, Data} ->
-			% TODO we actually need to check what Data is
+        {ok, <<"<policy-file-request/>",0>>} ->
 			case file:read_file(gen_mod:get_module_opt(Host, ?MODULE, policy_file, "/etc/crossdomain.xml")) of % FIX this stupid default
 			{ok, Policy} ->
-				gen_tcp:send(Socket, binary_to_list(Policy));
+				gen_tcp:send(Socket, Policy);
 			Error ->
 				?ERROR_MSG("Can't open policy file",[Error])
 			end,
 			gen_tcp:close(Socket);
-        {error, closed} ->
+	{ok, Data} ->
+		        ?WARNING_MSG("Invalid request",[Data]),
+	                gen_tcp:close(Socket);
+	{error, closed} ->
 			% FIXME: do something different here
             error
     end.
