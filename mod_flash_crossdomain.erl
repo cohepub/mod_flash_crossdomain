@@ -68,6 +68,6 @@ adobe_flash_connection_handler(Host, Socket) ->
 		        ?WARNING_MSG("Invalid request",[Data]),
 	                gen_tcp:close(Socket);
 	{error, closed} ->
-			% FIXME: do something different here
-            error
+		        ?ERROR_MSG("Socket was unexpectedly closed",[Socket]),
+		        error
     end.
